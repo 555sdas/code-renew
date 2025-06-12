@@ -1,9 +1,7 @@
 from typing import Dict
-
 import numpy as np
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
-                             f1_score, confusion_matrix, classification_report)
-
+                             f1_score, confusion_matrix)
 
 class ThreeWayEvaluator:
     """
@@ -23,12 +21,12 @@ class ThreeWayEvaluator:
         """
         综合评估模型性能
         """
-        # 计算传统指标
+        # 计算传统指标（添加zero_division参数处理报错）
         metrics = {
             'accuracy': accuracy_score(y_true, y_pred),
-            'precision': precision_score(y_true, y_pred),
-            'recall': recall_score(y_true, y_pred),
-            'f1': f1_score(y_true, y_pred),
+            'precision': precision_score(y_true, y_pred, zero_division=0),  # 修改处
+            'recall': recall_score(y_true, y_pred, zero_division=0),        # 修改处
+            'f1': f1_score(y_true, y_pred, zero_division=0),                # 修改处
             'confusion_matrix': confusion_matrix(y_true, y_pred).tolist()
         }
 
