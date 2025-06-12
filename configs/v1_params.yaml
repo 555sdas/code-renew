@@ -1,0 +1,17 @@
+# 粒球V1参数配置
+radius: 0.3  # 粒球半径（需根据数据尺度调整）
+# 三支决策V1参数配置
+alpha: 0.9  # 接受阈值
+beta: 0.3   # 拒绝阈值
+
+paths:
+  data_root: "E:/徐兵鑫毕业论文/数据集"  # 修改为实际数据集根目录
+  fourclass_dir: "fourclass"          # 数据集子目录（无raw层级）
+  output_dir: "results/v1"            # 输出目录
+
+data_loading:
+  file_name: "fourclass"              # 无扩展名（代码自动检测）
+  normalize: True
+  test_size: 0.3
+  random_state: 42
+  missing_value: "mean"
