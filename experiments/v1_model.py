@@ -5,6 +5,7 @@ from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisi
 from data_load.fourclass_data_load import DataLoader
 from utils.evaluater import ThreeWayEvaluator
 from data_load.mushroom_data_load import DataLoadermushroom
+from data_load.svmguide1_data_load import DataLoadersvmguide1
 
 class GranularThreeWayClassifier:
     """
@@ -195,6 +196,54 @@ if __name__ == "__main__":
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifier(
         gb_radius=10,  # 粒球半径
+        alpha=1,  # 接受阈值
+        beta=0.2  # 拒绝阈值
+    )
+
+    # 打印初始模型结构
+    print("\n=== 初始模型结构 ===")
+    print(model)
+
+    train_report = model.fit(X_train, y_train)
+
+    print("\n=== 训练后模型结构 ===")
+    print(model)
+
+    print(f"\n训练完成！生成 {train_report['n_balls']} 个粒球")
+    print(f"平均纯度: {train_report['avg_purity']:.2f}")
+    print(f"最小纯度: {train_report['min_purity']:.2f}")
+    print(f"最大纯度: {train_report['max_purity']:.2f}")
+
+    # 3. 预测测试集
+    print("\n=== 开始预测 ===")
+    y_pred, similarities = model.predict(X_test)
+
+    # 4. 评估结果
+    print("\n=== 评估结果 ===")
+    eval_results = ThreeWayEvaluator.evaluate(
+        y_true=Y_test,
+        y_pred=y_pred,
+        similarities=similarities,
+        alpha=1,  # 与模型初始化时相同的alpha
+        beta=0.2  # 与模型初始化时相同的beta
+    )
+    ThreeWayEvaluator.print_report(eval_results)
+
+    print("=== 数据集svmguide1 ===")
+    loader = DataLoadersvmguide1()
+    result =loader.load_svmguide1()
+    train_data = result['data']['train']
+    X_train, y_train = train_data
+    test_data = result['data']['test']
+    X_test, Y_test = test_data
+    print(f"训练集特征形状: {X_train.shape}")
+    print(f"训练集标签形状: {y_train.shape}")
+    print(f"测试集特征形状: {X_test.shape}")
+    print(f"训练集标签形状: {Y_test.shape}")
+    # 2. 训练模型
+    print("=== 开始训练 ===")
+    model = GranularThreeWayClassifier(
+        gb_radius=1,  # 粒球半径
         alpha=1,  # 接受阈值
         beta=0.2  # 拒绝阈值
     )

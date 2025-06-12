@@ -8,12 +8,14 @@ paths:
   data_root: "E:/徐兵鑫毕业论文/数据集"  # 修改为实际数据集根目录
   fourclass_dir: "fourclass"          # 数据集子目录（无raw层级）
   mushroom_dir: "mushroom"
+  svmguide1_dir: "svmguide1"
 
   output_dir: "results/v1"            # 输出目录
 
 data_loading:
   file_name: "fourclass"              # 无扩展名（代码自动检测）
   file_mushroom_name: "mushroom"
+  file_svmguide1_name: "svmguide1"
   normalize: True
   test_size: 0.3
   random_state: 42
