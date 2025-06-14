@@ -121,7 +121,7 @@ class GranularThreeWayClassifierV3:
             plt.figure(figsize=(8, 6))
             sns.heatmap(self.attention_matrix_, annot=True, cmap='viridis')
             plt.title("Feature Attention Matrix")
-            plt.show()
+            #plt.show()
 
         return self.attention_matrix_
 
@@ -198,9 +198,9 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.9,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.79,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
-        beta=0.3,  # 降低拒绝阈值
+        beta=0.001,  # 降低拒绝阈值
     )
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -233,11 +233,11 @@ if __name__ == "__main__":
         y_pred=y_pred,
         similarities=similarities,
         alpha=1,  # 与模型初始化时相同的alpha
-        beta=0.3  # 与模型初始化时相同的beta
+        beta=0.001  # 与模型初始化时相同的beta
     )
     ThreeWayEvaluator.print_report(eval_results)
 
-    # 2. mushroom数据集
+    #2. mushroom数据集
     print("\n=== 数据集mushroom ===")
     loader = DataLoadermushroom()
     result = loader.load_mushroom()
@@ -247,9 +247,9 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.9,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.99,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
-        beta=0.3,  # 降低拒绝阈值
+        beta=0.02,  # 降低拒绝阈值
     )
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -282,7 +282,7 @@ if __name__ == "__main__":
         y_pred=y_pred,
         similarities=similarities,
         alpha=1,  # 与模型初始化时相同的alpha
-        beta=0.3  # 与模型初始化时相同的beta
+        beta=0.02  # 与模型初始化时相同的beta
     )
     ThreeWayEvaluator.print_report(eval_results)
 
@@ -296,9 +296,9 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.7,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.8,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
-        beta=0.3,  # 降低拒绝阈值
+        beta=0.00001,  # 降低拒绝阈值
     )
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -331,6 +331,6 @@ if __name__ == "__main__":
         y_pred=y_pred,
         similarities=similarities,
         alpha=1,  # 与模型初始化时相同的alpha
-        beta=0.3  # 与模型初始化时相同的beta
+        beta=0.00001  # 与模型初始化时相同的beta
     )
     ThreeWayEvaluator.print_report(eval_results)
