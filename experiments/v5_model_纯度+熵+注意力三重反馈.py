@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Tuple, List
-from granular_ball.v5_granular_ball_纯度加熵加注意力三重反馈 import GranularBallV5
+from granular_ball.v5_granular_ball_三重反馈 import GranularBallV5
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
 from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
@@ -33,7 +33,7 @@ class GranularThreeWayClassifierV5:
             min_purity=min_purity,
             max_entropy=max_entropy,
             base_radius=base_radius,
-            attention_dim=4
+            attention_dim=2
         )
         self.tw_model = ThreeWayDecisionV1(alpha=alpha, beta=beta)
         self.ball_stats_ = []
@@ -227,112 +227,10 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV5(
-        min_purity=0.8,
+        min_purity=0.9,
         max_entropy=0.7,
         base_radius=0.5,
-        alpha=0.95,
-        beta=0.05
-    )
-    model.fit(X_train, y_train)
-
-    print("\n=== 训练后模型结构 ===")
-    print(model)
-
-    # 查看特征重要性
-    print("\n=== 特征重要性 ===")
-    feature_importance = model.get_feature_importance()
-    print(feature_importance)
-
-    # 获取并可视化注意力矩阵
-    print("\n=== 注意力矩阵 ===")
-    attention_matrix = model.visualize_attention()
-    print(attention_matrix)
-
-    # 4. 预测测试集
-    print("\n=== 开始预测 ===")
-    y_pred, similarities = model.predict(X_test)
-
-    # 5. 评估结果
-    print("\n=== 评估结果 ===")
-    eval_results = ThreeWayEvaluator.evaluate(
-        y_true=Y_test,
-        y_pred=y_pred,
-        similarities=similarities,
-        alpha=0.95,
-        beta=0.05
-    )
-    ThreeWayEvaluator.print_report(eval_results)
-
-    # 2. mushroom数据集实验
-    print("\n=== 数据集mushroom ===")
-    loader = DataLoadermushroom()
-    result = loader.load_mushroom()
-    X_train, y_train = result['data']['train']
-    X_test, Y_test = result['data']['test']
-
-    # 数据标准化
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    # 2. 训练模型
-    print("=== 开始训练 ===")
-    model = GranularThreeWayClassifierV5(
-        min_purity=0.95,
-        max_entropy=0.8,
-        base_radius=1.5,
-        alpha=0.9,
-        beta=0.02
-    )
-    model.fit(X_train, y_train)
-
-    print("\n=== 训练后模型结构 ===")
-    print(model)
-
-    # 查看特征重要性
-    print("\n=== 特征重要性 ===")
-    feature_importance = model.get_feature_importance()
-    print(feature_importance)
-
-    # 获取并可视化注意力矩阵
-    print("\n=== 注意力矩阵 ===")
-    attention_matrix = model.visualize_attention()
-    print(attention_matrix)
-
-    # 4. 预测测试集
-    print("\n=== 开始预测 ===")
-    y_pred, similarities = model.predict(X_test)
-
-    # 5. 评估结果
-    print("\n=== 评估结果 ===")
-    eval_results = ThreeWayEvaluator.evaluate(
-        y_true=Y_test,
-        y_pred=y_pred,
-        similarities=similarities,
-        alpha=0.9,
-        beta=0.02
-    )
-    ThreeWayEvaluator.print_report(eval_results)
-
-    # 3. svmguide1数据集实验
-    print("\n=== 数据集svmguide1 ===")
-    loader = DataLoadersvmguide1()
-    result = loader.load_svmguide1()
-    X_train, y_train = result['data']['train']
-    X_test, Y_test = result['data']['test']
-
-    # 数据标准化
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    # 2. 训练模型
-    print("=== 开始训练 ===")
-    model = GranularThreeWayClassifierV5(
-        min_purity=0.75,
-        max_entropy=0.8,
-        base_radius=0.8,
-        alpha=0.85,
+        alpha=1,
         beta=0.001
     )
     model.fit(X_train, y_train)
@@ -360,7 +258,109 @@ if __name__ == "__main__":
         y_true=Y_test,
         y_pred=y_pred,
         similarities=similarities,
-        alpha=0.85,
+        alpha=1,
         beta=0.001
     )
     ThreeWayEvaluator.print_report(eval_results)
+
+    # # 2. mushroom数据集实验
+    # print("\n=== 数据集mushroom ===")
+    # loader = DataLoadermushroom()
+    # result = loader.load_mushroom()
+    # X_train, y_train = result['data']['train']
+    # X_test, Y_test = result['data']['test']
+    #
+    # # 数据标准化
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV5(
+    #     min_purity=0.95,
+    #     max_entropy=0.8,
+    #     base_radius=1.5,
+    #     alpha=0.9,
+    #     beta=0.02
+    # )
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = ThreeWayEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=0.9,
+    #     beta=0.02
+    # )
+    # ThreeWayEvaluator.print_report(eval_results)
+    #
+    # # 3. svmguide1数据集实验
+    # print("\n=== 数据集svmguide1 ===")
+    # loader = DataLoadersvmguide1()
+    # result = loader.load_svmguide1()
+    # X_train, y_train = result['data']['train']
+    # X_test, Y_test = result['data']['test']
+    #
+    # # 数据标准化
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV5(
+    #     min_purity=0.75,
+    #     max_entropy=0.8,
+    #     base_radius=0.8,
+    #     alpha=0.85,
+    #     beta=0.001
+    # )
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = ThreeWayEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=0.85,
+    #     beta=0.001
+    # )
+    # ThreeWayEvaluator.print_report(eval_results)
