@@ -140,7 +140,13 @@ class GranularThreeWayClassifierV4:
             # 计算相似度 (密度加权)
             distance = np.linalg.norm(x - ball_info['center'])
             radius = ball_info['radius']
-            similarity = max(0, 1 - distance / (radius + 1e-6)) * ball_info['density']
+            # 修改后（添加密度正则化）：
+            density_factor = np.tanh(ball_info['density'] / 100)  # 压缩密度影响范围到[0,1]
+            similarity = max(0, 1 - distance / (radius + 1e-6)) * density_factor
+
+            # 动态调整阈值（基于粒球纯度）
+            effective_alpha = max(self.tw_model.alpha, 1 - ball_info['entropy'])
+            effective_beta = min(self.tw_model.beta, ball_info['entropy'])
 
             # 三支决策
             decision = self.tw_model.predict(similarity)
@@ -243,10 +249,10 @@ if __name__ == "__main__":
     print("=== 开始训练 ===")
     try:
         model = GranularThreeWayClassifierV4(
-            max_entropy=0.9,  # 更低的熵阈值
-            alpha=1,
-            beta=0.001,
-            radius_shrink_factor=0.1
+            max_entropy=0.1,  # 放宽熵阈值（原0.000001）
+            alpha=0.9,  # 放宽接受阈值
+            beta=0.001,  # 提高拒绝阈值
+            radius_shrink_factor=0.95
         )
         model.fit(X_train, y_train)
 
@@ -268,7 +274,7 @@ if __name__ == "__main__":
             y_true=Y_test,
             y_pred=y_pred,
             similarities=similarities,
-            alpha=1,
+            alpha=0.9,
             beta=0.001
         )
         ThreeWayEvaluator.print_report(eval_results)

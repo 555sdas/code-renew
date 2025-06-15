@@ -78,8 +78,10 @@ class GranularBallV4:
         """[MODIFIED] 返回密度信息"""
         center = np.median(X, axis=0)
         distances = np.linalg.norm(X - center, axis=1)
-        radius = np.percentile(distances, 80)
-        density = len(X) / (np.pi * (radius ** 2 + 1e-6))
+
+
+        radius = np.mean(distances) + np.std(distances)
+        density = len(X) / (radius ** X.shape[1] + 1e-6)
 
         # [DEBUG] 中心点计算
         print(f"[Center] 计算: 中心点={center}, 半径={radius:.3f}, 密度={density:.3f}")
@@ -196,6 +198,7 @@ class GranularBallV4:
                 merged.append(current)
 
         self.balls_ = merged
+
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'GranularBallV4':
         """[MODIFIED] 增强训练过程 - 保留所有样本不丢弃"""
