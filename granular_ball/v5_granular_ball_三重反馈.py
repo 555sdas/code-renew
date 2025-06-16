@@ -13,7 +13,7 @@ class GranularBallV5:
     基于纯度-熵-注意力三重反馈的粒球生成算法V5
     核心创新：
     1. 动态半径生成（基于纯度、熵和注意力）
-    2. 三重联合分裂决策
+    2. 类别驱动的分裂决策
     3. 注意力引导的特征加权
     """
 
@@ -22,12 +22,14 @@ class GranularBallV5:
                  max_entropy: float = 0.8,
                  base_radius: float = 1.0,
                  attention_dim: int = 4,
-                 learning_rate: float = 0.01):
+                 learning_rate: float = 0.01,
+                 radius_buffer: float = 1.1):  # 添加半径缓冲系数
         self.min_purity = min_purity
         self.max_entropy = max_entropy
         self.base_radius = base_radius
         self.attention_dim = attention_dim
         self.learning_rate = learning_rate
+        self.radius_buffer = radius_buffer  # 用于确保覆盖所有样本的缓冲系数
         self.balls_ = []  # [(center, radius, sample_indices, level, density)]
         self.entropies_ = []
         self.purities_ = []
@@ -121,28 +123,97 @@ class GranularBallV5:
         loss.backward()
         optimizer.step()
 
-    def _should_split(self, purity: float, entropy_val: float) -> bool:
-        """三重联合分裂决策"""
-        # 基本条件：纯度不足且熵过高
-        if purity < self.min_purity and entropy_val > self.max_entropy:
-            return True
-        # 关注特征变化大时分裂
-        return False
+    def _should_split(self, y: np.ndarray) -> bool:
+        """基于纯度决定是否分裂"""
+        purity = self._calculate_purity(y)
+        return purity < self.min_purity
 
-    def _split_ball(self, X: np.ndarray, y: np.ndarray, entropy_val: float) -> List[Tuple[np.ndarray, np.ndarray]]:
-        """注意力引导的分裂"""
-        # 确定聚类数量（基于熵值）
-        n_clusters = min(4, int(entropy_val * 3) + 1)
+    def _get_split_count(self, y: np.ndarray) -> int:
+        """根据样本种类和熵确定分裂数量"""
+        n_classes = len(np.unique(y))
+        entropy_val = self._calculate_entropy(y)
 
-        # 使用注意力加权距离
-        attn_weights = self._attention_weights(X)
-        kmeans = KMeans(n_clusters=n_clusters, init='k-means++', n_init=5)
+        # 计算基础分裂数量
+        base_count = max(2, min(n_classes, int(entropy_val * n_classes * 2)))
 
-        # 注意力加权特征
-        X_weighted = X * attn_weights
-        labels = kmeans.fit_predict(X_weighted)
+        # 确保不超过样本种类总数
+        return min(base_count, n_classes)
 
-        return [(X[labels == i], y[labels == i]) for i in range(n_clusters)]
+    def _split_ball(self, X: np.ndarray, y: np.ndarray) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """按类别分裂粒球，允许样本重复分配到多个粒球"""
+        n_split = self._get_split_count(y)
+
+        if n_split <= 1:
+            return []
+
+        # 获取所有类别
+        unique_classes, class_counts = np.unique(y, return_counts=True)
+        n_classes = len(unique_classes)
+
+        # 按样本数量降序排序类别
+        sorted_indices = np.argsort(class_counts)[::-1]
+        sorted_classes = unique_classes[sorted_indices]
+        sorted_counts = class_counts[sorted_indices]
+
+        # 仅选择前n_split个主要类别
+        selected_classes = sorted_classes[:n_split]
+
+        split_results = []
+
+        # 第一步：为每个选中的类别创建一个初始粒球
+        for cls in selected_classes:
+            # 获取当前类别的所有样本
+            cls_mask = (y == cls)
+            X_cls = X[cls_mask]
+
+            # 计算类别中心
+            center = np.mean(X_cls, axis=0)
+
+            # 计算该类所有样本到中心的距离
+            distances = np.linalg.norm(X_cls - center, axis=1)
+            radius = np.max(distances) * self.radius_buffer
+
+            # 创建一个空的粒球容器
+            ball_indices = np.where(cls_mask)[0].tolist()
+
+            # 存储粒球信息：(中心，半径，临时索引)
+            split_results.append({
+                'center': center,
+                'radius': radius,
+                'indices': ball_indices,  # 初始只包含本类样本
+                'class': cls
+            })
+
+        # 第二步：找出所有类别（包括未选中的）的样本
+        all_class_indices = np.arange(len(y))
+
+        # 第三步：将样本分配到所有覆盖它的粒球
+        for idx in all_class_indices:
+            point = X[idx]
+
+            # 检查哪些粒球覆盖此样本
+            for ball in split_results:
+                distance = np.linalg.norm(point - ball['center'])
+                if distance <= ball['radius']:
+                    if idx not in ball['indices']:
+                        ball['indices'].append(idx)
+
+                    # 更新半径以确保包含新样本（如果必要）
+                    if distance > ball['radius']:
+                        ball['radius'] = distance * self.radius_buffer
+
+        # 第四步：组织结果
+        final_results = []
+        for ball in split_results:
+            indices_arr = np.array(ball['indices'])
+            # 确保去重和排序
+            unique_indices = np.unique(indices_arr)
+            X_ball = X[unique_indices]
+            y_ball = y[unique_indices]
+
+            final_results.append((X_ball, y_ball))
+
+        return final_results
 
     def _calculate_loss(self, purity: float, entropy_val: float, feature_std: float) -> float:
         """三重联合损失函数"""
@@ -181,9 +252,9 @@ class GranularBallV5:
             print(f"纯度={purity:.3f}, 熵={entropy_val:.3f}, 注意力权重={weights_info}")
 
             # 分裂决策
-            if self._should_split(purity, entropy_val) and len(X_ball) > 0:
+            if len(X_ball) > 0 and self._should_split(y_ball):
                 print("触发分裂")
-                split_results = self._split_ball(X_ball, y_ball, entropy_val)
+                split_results = self._split_ball(X_ball, y_ball)
                 print(f"分裂为{len(split_results)}个子粒球")
 
                 # 更新注意力网络
@@ -195,8 +266,7 @@ class GranularBallV5:
                         continue
 
                     # 正确的索引处理
-                    mask = [i for i, x in enumerate(X_ball) if any((x == x_split).all() for x_split in X_split)]
-                    split_indices = indices[mask]
+                    split_indices = np.arange(len(X))[np.isin(X, X_split).all(axis=1)]
 
                     queue.append((X_split, y_split, split_indices, level + 1))
             else:

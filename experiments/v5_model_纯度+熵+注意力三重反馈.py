@@ -228,8 +228,8 @@ if __name__ == "__main__":
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV5(
         min_purity=0.9,
-        max_entropy=0.7,
-        base_radius=0.5,
+        max_entropy=0.2,
+        base_radius=2,
         alpha=1,
         beta=0.001
     )
