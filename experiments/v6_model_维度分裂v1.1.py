@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Tuple, List
-from granular_ball.v6_granular_ball_维度分裂v1.1 import GranularBallClassCentric
+from granular_ball import GranularBallClassCentric
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
 from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
