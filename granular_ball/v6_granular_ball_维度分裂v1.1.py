@@ -2,6 +2,7 @@ import numpy as np
 from typing import List, Tuple, Dict, Optional
 from sklearn.neighbors import KDTree
 import math
+import copy  # 添加copy模块
 
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
 
@@ -17,7 +18,7 @@ class GranularBallClassCentric:
     def __init__(self,
                  min_purity: float = 0.85,
                  max_iter: int = 100,
-                 min_radius: float = 0.51):
+                 min_radius: float = 0.01):
         self.min_purity = min_purity
         self.max_iter = max_iter
         self.min_radius = min_radius  # 最小半径限制
@@ -25,6 +26,7 @@ class GranularBallClassCentric:
         self.purities_ = []
         self.X_full = None  # 存储完整数据集
         self.y_full = None  # 存储完整标签集
+        self.generated_balls = []  # 存储最初生成的粒球（未处理后处理）
 
     def _get_label_and_purity(self, y: np.ndarray, target_class: int) -> float:
         """计算针对目标类别的纯度"""
@@ -35,7 +37,7 @@ class GranularBallClassCentric:
         """计算类别中心点和半径（确保最小半径）"""
         center = np.median(X, axis=0)  # 中位数作为中心点
         distances = np.linalg.norm(X - center, axis=1)
-        radius = np.percentile(distances, 100)  # 80%百分位数
+        radius = np.percentile(distances, 80)  # 80%百分位数
         return center, max(radius, self.min_radius)  # 确保不小于最小半径
 
     def _select_important_features(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -137,8 +139,133 @@ class GranularBallClassCentric:
 
         return n_target / len(ball_indices)
 
-    def _build_class_granular_ball(self, X: np.ndarray, y: np.ndarray,
-                                   class_label: int, indices: np.ndarray, level: int = 0):
+    def _split_ball(self, ball: Tuple) -> List[Tuple]:
+        """分裂给定的粒球（纯度不满足继续分裂）"""
+        center, radius, indices, class_label, level = ball
+
+        # 获取粒球的样本
+        X = self.X_full[indices]
+        y = self.y_full[indices]
+
+        # 使用象限分裂
+        quadrant_masks = self._quadrant_split(X, center, y)
+
+        if len(quadrant_masks) <= 1:
+            # 无法分裂，返回原始球
+            return [ball]
+
+        # 收集分裂后的子球
+        sub_balls = []
+
+        for mask in quadrant_masks:
+            if np.sum(mask) == 0:  # 跳过空象限
+                continue
+
+            X_quad = X[mask]
+            y_quad = y[mask]
+            quad_indices = indices[mask]
+
+            # 计算新球的中心和半径
+            new_center, new_radius = self._calculate_center_and_radius(X_quad)
+
+            # 计算新球的全局纯度
+            new_purity = self._get_global_purity(new_center, new_radius, class_label)
+
+            # 创建新的球信息
+            new_ball = (new_center, new_radius, quad_indices, class_label, level + 1)
+
+            # 如果纯度满足要求或达到最小半径，直接加入结果
+            if new_purity >= self.min_purity or new_radius <= self.min_radius:
+                sub_balls.append(new_ball)
+            else:
+                # 否则递归分裂
+                sub_sub_balls = self._split_ball(new_ball)
+                sub_balls.extend(sub_sub_balls)
+
+        return sub_balls
+
+    def _postprocess_balls(self):
+        print("\n=== 进入_postprocess_balls方法 ===")  # 调试输出
+        if not self.balls_:
+            print("警告：粒球列表为空，跳过处理")  # 调试输出
+        """粒球后处理：按照要求处理相互重叠的情况"""
+        if not self.balls_:
+            return
+
+        print("\n=== 开始粒球后处理 ===")
+        print(f"初始粒球数量: {len(self.balls_)}")
+
+        # 保存最初生成的粒球（用于比较）
+        self.generated_balls = copy.deepcopy(self.balls_)
+
+        max_iter = 5  # 最多迭代5次防止无限循环
+        changed = True
+        iteration = 0
+        total_balls_removed = 0
+
+        while changed and iteration < max_iter:
+            iteration += 1
+            changed = False
+            print(f"\n后处理: 第 {iteration} 次迭代")
+
+            # 按半径降序排序（大球在前）
+            self.balls_.sort(key=lambda x: x[1], reverse=True)
+
+            # 复制当前球列表
+            current_balls = copy.deepcopy(self.balls_)
+            new_balls = []
+            balls_to_remove = set()
+
+            for i, ball_a in enumerate(current_balls):
+                center_a, radius_a, indices_a, class_a, level_a = ball_a
+
+                # 检查是否已被移除
+                if i in balls_to_remove:
+                    continue
+
+                # 标记此球是否包含其他小球
+                contains_balls = False
+                for j, ball_b in enumerate(current_balls):
+                    if j <= i or j in balls_to_remove:
+                        continue
+
+                    center_b, radius_b, indices_b, class_b, level_b = ball_b
+
+                    # 计算球心距离
+                    dist = np.linalg.norm(center_a - center_b)
+
+                    # 检查是否完全包含: dist(center_A, center_B) + radius_B <= radius_A
+                    if dist + radius_b <= radius_a:
+                        contains_balls = True
+                        print(f"球 {j} (r={radius_b:.3f}) 被球 {i} (r={radius_a:.3f}) 完全包含")
+                        balls_to_remove.add(j)
+                        total_balls_removed += 1
+
+                if contains_balls:
+                    # 分裂球A
+                    print(f"分裂包含其他球的粒球 {i} (r={radius_a:.3f})")
+                    sub_balls = self._split_ball(ball_a)
+                    new_balls.extend(sub_balls)
+                    balls_to_remove.add(i)
+                    changed = True
+                else:
+                    # 如果没有包含其他球，保留此球
+                    new_balls.append(ball_a)
+
+            # 构建最终球列表
+            self.balls_ = [
+                ball for idx, ball in enumerate(current_balls)
+                if idx not in balls_to_remove and (idx >= len(current_balls) or ball not in current_balls[idx + 1:])
+            ]
+
+            print(f"本次迭代分裂粒球数量: {len(balls_to_remove)}")
+            print(f"当前粒球总数: {len(self.balls_)}")
+
+        print(
+            f"\n后处理完成: 原始粒球数={len(self.generated_balls)}, 处理后粒球数={len(self.balls_)}, 移除的粒球数={total_balls_removed}")
+
+    def _recursive_build(self, X: np.ndarray, y: np.ndarray,
+                         class_label: int, indices: np.ndarray, level: int = 0):
         """递归构建针对特定类别的粒球（使用注意力机制优化）"""
         # 计算当前粒球的中心点和半径
         center, radius = self._calculate_center_and_radius(X)
@@ -187,20 +314,21 @@ class GranularBallClassCentric:
             y_quad = y[mask]
             quad_indices = indices[mask]
 
-            self._build_class_granular_ball(
+            self._recursive_build(
                 X_quad, y_quad, class_label, quad_indices, level + 1
             )
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'GranularBallClassCentric':
-        self.X_full = X  # 保存完整数据集
-        self.y_full = y  # 保存完整标签集
+        print("\n=== 进入GranularBallClassCentric.fit方法 ===")
+        self.X_full = X
+        self.y_full = y
         self.X_ = X
         self.y_ = y
         self.balls_ = []
         self.purities_ = []
         self.ball_tree_ = None
 
-        print(f"\n初始数据统计: 样本数={len(X)}, 类别分布={dict(zip(*np.unique(y, return_counts=True)))}")
+        print(f"初始数据统计: 样本数={len(X)}, 类别分布={dict(zip(*np.unique(y, return_counts=True)))}")
 
         # 获取所有类别
         unique_classes = np.unique(y)
@@ -208,22 +336,29 @@ class GranularBallClassCentric:
         # 为每个类别单独构建粒球系统
         for cls in unique_classes:
             print(f"\n=== 为类别 {cls} 构建粒球系统 ===")
-
-            # 获取该类所有样本
             class_mask = (y == cls)
             X_cls = X[class_mask]
             y_cls = y[class_mask]
             indices_cls = np.arange(len(X))[class_mask]
-
-            # 为该类别创建初始粒球（包含所有该类样本）
-            self._build_class_granular_ball(X_cls, y_cls, cls, indices_cls, 0)
+            self._recursive_build(X_cls, y_cls, cls, indices_cls, 0)
 
         print(f"\n生成粒球统计: 总数={len(self.balls_)}, 平均纯度={np.mean(self.purities_):.4f}")
+
+        # 确保调用粒球后处理
+        print("\n=== 开始粒球后处理 ===")
+        self._postprocess_balls()
+        print("=== 粒球后处理完成 ===")
+
+        # 更新纯度列表
+        self.purities_ = [self._get_global_purity(ball[0], ball[1], ball[3]) for ball in self.balls_]
+        print(f"最终粒球统计: 总数={len(self.balls_)}, 平均纯度={np.mean(self.purities_):.4f}")
 
         # 构建粒球空间索引
         if self.balls_:
             centers = np.array([ball[0] for ball in self.balls_])
             self.ball_tree_ = KDTree(centers)
+        else:
+            print("警告：最终粒球列表为空")
 
         return self
 
@@ -243,116 +378,11 @@ class GranularBallClassCentric:
         info = [
             f"GranularBallClassCentric(类别中心粒球系统)",
             f"- 粒球总数: {self.n_balls}",
+            f"- 原始粒球数: {len(self.generated_balls)}",
             f"- 最小纯度: {self.min_purity}",
             f"- 最小半径: {self.min_radius}",
             f"- 平均纯度: {np.mean(self.purities_):.4f}",
             f"- 最小纯度: {np.min(self.purities_):.4f}",
             f"- 最大纯度: {np.max(self.purities_):.4f}"
         ]
-        return "\n".join(info)
-
-
-class GranularThreeWayClassifierClassCentric:
-    """
-    基于类别中心粒球的三支分类器
-    """
-
-    def __init__(self,
-                 min_purity: float = 0.85,
-                 alpha: float = 0.7,
-                 beta: float = 0.3,
-                 min_radius: float = 0.001):
-        self.gb_model = GranularBallClassCentric(min_purity=min_purity, min_radius=min_radius)
-        self.tw_model = ThreeWayDecisionV1(alpha=alpha, beta=beta)
-        self.ball_stats_ = []
-
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> Dict:
-        """训练模型"""
-        self.gb_model.fit(X_train, y_train)
-
-        # 计算每个粒球的统计信息
-        self.ball_stats_ = []
-        for ball_info in self.gb_model.balls_:
-            center, radius, indices, class_label, level = ball_info
-            labels = y_train[indices]
-            n_class_samples = np.sum(labels == class_label)
-            purity = n_class_samples / len(labels)
-
-            self.ball_stats_.append({
-                'center': center,
-                'radius': radius,
-                'class_label': class_label,
-                'purity': purity,
-                'level': level
-            })
-
-        return self._get_training_report()
-
-    def predict(self, X_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """预测测试样本"""
-        decisions = []
-        similarities = []
-
-        for x in X_test:
-            # 找到最近粒球
-            ball_idx = self.gb_model.predict_ball(x)
-            if ball_idx == -1 or ball_idx >= len(self.ball_stats_):
-                # 无法找到合适粒球，直接延迟决策
-                decisions.append(2)  # 使用2表示延迟决策
-                similarities.append(0)
-                continue
-
-            ball_info = self.ball_stats_[ball_idx]
-            center = ball_info['center']
-            radius = ball_info['radius']
-            target_class = ball_info['class_label']
-
-            # 计算相似度 (1 - 归一化距离)
-            distance = np.linalg.norm(x - center)
-            similarity = max(0, 1 - distance / radius) if radius > 0 else 1.0
-
-            # 三支决策
-            decision = self.tw_model.predict(similarity)
-
-            # 决策映射：accept->1, reject->0, delay->2
-            if decision == "accept":
-                decisions.append(1)
-            elif decision == "reject":
-                decisions.append(0)
-            else:  # delay
-                decisions.append(2)
-
-            similarities.append(similarity)
-
-        return np.array(decisions), np.array(similarities)
-
-    def _get_training_report(self) -> Dict:
-        """生成训练报告"""
-        purities = [b['purity'] for b in self.ball_stats_]
-        return {
-            'n_balls': self.gb_model.n_balls,
-            'avg_purity': np.mean(purities),
-            'min_purity': np.min(purities),
-            'max_purity': np.max(purities),
-            'min_radius': self.gb_model.min_radius
-        }
-
-    def __str__(self):
-        """返回模型结构信息"""
-        info = [
-            "GranularThreeWayClassifierClassCentric 模型结构:",
-            f"- 粒球模型: GranularBallClassCentric",
-            f"  * 最小纯度: {self.gb_model.min_purity}",
-            f"  * 最小半径: {self.gb_model.min_radius}",
-            f"  * 粒球数量: {getattr(self.gb_model, 'n_balls', '未训练')}",
-            f"- 三支决策模型: {type(self.tw_model).__name__}",
-            f"  * alpha(接受阈值): {self.tw_model.alpha}",
-            f"  * beta(拒绝阈值): {self.tw_model.beta}",
-            f"- 训练状态: {'已训练' if hasattr(self, 'ball_stats_') else '未训练'}"
-        ]
-        if hasattr(self, 'ball_stats_'):
-            info.append(f"- 粒球统计:")
-            info.append(f"  * 平均纯度: {np.mean([b['purity'] for b in self.ball_stats_]):.2f}")
-            info.append(f"  * 最小纯度: {np.min([b['purity'] for b in self.ball_stats_]):.2f}")
-            info.append(f"  * 最大纯度: {np.max([b['purity'] for b in self.ball_stats_]):.2f}")
         return "\n".join(info)
