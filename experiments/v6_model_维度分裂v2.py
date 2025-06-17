@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Dict, Tuple, List
-from granular_ball import GranularBallClassCentric
+from granular_ball.v6_granular_ball_维度分裂v2 import GranularBallClassCentric
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
 from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.5,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.9,  # 降低纯度阈值，允许更多分裂
         alpha=0.95,  # 降低接受阈值
         beta=0.01,  # 降低拒绝阈值
     )
@@ -319,7 +319,7 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.5,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
         beta=0.01,  # 降低拒绝阈值
     )

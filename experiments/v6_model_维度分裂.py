@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.9,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
         beta=0.01,  # 降低拒绝阈值
     )
