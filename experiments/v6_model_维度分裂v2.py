@@ -221,9 +221,9 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.9,  # 降低纯度阈值，允许更多分裂
-        alpha=0.95,  # 降低接受阈值
-        beta=0.01,  # 降低拒绝阈值
+        min_purity=0.98,  # 降低纯度阈值，允许更多分裂
+        alpha=1.1,  # 降低接受阈值
+        beta=-0.01,  # 降低拒绝阈值
     )
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -255,8 +255,8 @@ if __name__ == "__main__":
         y_true=Y_test,
         y_pred=y_pred,
         similarities=similarities,
-        alpha=0.95,  # 与模型初始化时相同的alpha
-        beta=0.001  # 与模型初始化时相同的beta
+        alpha=1,  # 与模型初始化时相同的alpha
+        beta=-0.001  # 与模型初始化时相同的beta
     )
     ThreeWayEvaluator.print_report(eval_results)
 
@@ -309,52 +309,52 @@ if __name__ == "__main__":
     # )
     # ThreeWayEvaluator.print_report(eval_results)
 
-    # 3. svmguide1数据集
-    print("\n=== 数据集svmguide1 ===")
-    loader = DataLoadersvmguide1()
-    result = loader.load_svmguide1()
-    X_train, y_train = result['data']['train']
-    X_test, Y_test = result['data']['test']
-
-    # 2. 训练模型
-    print("=== 开始训练 ===")
-    model = GranularThreeWayClassifierV3(
-        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
-        alpha=1,  # 降低接受阈值
-        beta=0.01,  # 降低拒绝阈值
-    )
-    #min_radius: float = 0.59
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    # 训练模型
-    model.fit(X_train, y_train)
-
-    print("\n=== 训练后模型结构 ===")
-    print(model)
-
-    # 查看特征重要性
-    print("\n=== 特征重要性 ===")
-    feature_importance = model.get_feature_importance()
-    print(feature_importance)
-
-    # 获取并可视化注意力矩阵
-    print("\n=== 注意力矩阵 ===")
-    attention_matrix = model.visualize_attention()
-    print(attention_matrix)
-
-    # 4. 预测测试集
-    print("\n=== 开始预测 ===")
-    y_pred, similarities = model.predict(X_test)
-
-    # 5. 评估结果
-    print("\n=== 评估结果 ===")
-    eval_results = ThreeWayEvaluator.evaluate(
-        y_true=Y_test,
-        y_pred=y_pred,
-        similarities=similarities,
-        alpha=1,  # 与模型初始化时相同的alpha
-        beta=0.01  # 与模型初始化时相同的beta
-    )
-    ThreeWayEvaluator.print_report(eval_results)
+    # # 3. svmguide1数据集
+    # print("\n=== 数据集svmguide1 ===")
+    # loader = DataLoadersvmguide1()
+    # result = loader.load_svmguide1()
+    # X_train, y_train = result['data']['train']
+    # X_test, Y_test = result['data']['test']
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.9,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1.1,  # 降低接受阈值
+    #     beta=-0.00001,  # 降低拒绝阈值
+    # )
+    # #min_radius: float = 0.59
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = ThreeWayEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1.1,  # 与模型初始化时相同的alpha
+    #     beta=-0.00001  # 与模型初始化时相同的beta
+    # )
+    # ThreeWayEvaluator.print_report(eval_results)
