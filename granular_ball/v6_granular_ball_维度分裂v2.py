@@ -19,8 +19,8 @@ class GranularBallClassCentric:
     def __init__(self,
                  min_purity: float = 0.85,
                  max_iter: int = 100,
-                 min_radius: float = 0.51,
-                 max_contain_process_cycles: int = 2):  # 新增参数
+                 min_radius: float = 0.01,
+                 max_contain_process_cycles: int = 1):  # 新增参数
         self.min_purity = min_purity
         self.max_iter = max_iter
         self.min_radius = min_radius  # 最小半径限制
