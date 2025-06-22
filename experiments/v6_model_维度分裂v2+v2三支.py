@@ -6,6 +6,7 @@ from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
 from data_load.mushroom_data_load import DataLoadermushroom
 from data_load.svmguide1_data_load import DataLoadersvmguide1
+from data_load.
 from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
@@ -264,66 +265,66 @@ class GranularThreeWayClassifierV3:
 
 
 if __name__ == "__main__":
-    # 1. 创建 DataLoader 实例
-    print("=== 数据集fourclass ===")
-    loader = DataLoader()
-    result = loader.load_fourclass()
-    train_data = result['data']['train']
-    X_train, y_train = train_data
-    test_data = result['data']['test']
-    X_test, Y_test = test_data
-    #min_radius: float = 0.51参数设置
-
-    # 2. 训练模型
-    print("=== 开始训练 ===")
-    model = GranularThreeWayClassifierV3(
-        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
-        alpha=1,  # 降低接受阈值
-        beta=-0.01,  # 降低拒绝阈值
-    )
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    # 训练模型
-    model.fit(X_train, y_train)
-
-    print("\n=== 训练后模型结构 ===")
-    print(model)
-
-
-    # 查看特征重要性
-    print("\n=== 特征重要性 ===")
-    feature_importance = model.get_feature_importance()
-    print(feature_importance)
-    print("\n=== 可视化训练集粒球 ===")
-    # 保存到当前目录下的 granular_balls.png 文件
-    model.visualize_granular_balls(
-        X_train,
-        y_train,
-        title="Training Set with Granular Balls",
-        save_path="../images/granular_balls.png"  # 指定保存路径
-    )
-
-    # 获取并可视化注意力矩阵
-    print("\n=== 注意力矩阵 ===")
-    attention_matrix = model.visualize_attention()
-    print(attention_matrix)
-
-    # 4. 预测测试集
-    print("\n=== 开始预测 ===")
-    y_pred, similarities = model.predict(X_test)
-
-    # 5. 评估结果
-    print("\n=== 评估结果 ===")
-    eval_results = ThreeWayEvaluator.evaluate(
-        y_true=Y_test,
-        y_pred=y_pred,
-        similarities=similarities,
-        alpha=1,  # 与模型初始化时相同的alpha
-        beta=-0.01  # 与模型初始化时相同的beta
-    )
-    ThreeWayEvaluator.print_report(eval_results)
+    # # 1. 创建 DataLoader 实例
+    # print("=== 数据集fourclass ===")
+    # loader = DataLoader()
+    # result = loader.load_fourclass()
+    # train_data = result['data']['train']
+    # X_train, y_train = train_data
+    # test_data = result['data']['test']
+    # X_test, Y_test = test_data
+    # #min_radius: float = 0.51参数设置
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.95,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1,  # 降低接受阈值
+    #     beta=-0.01,  # 降低拒绝阈值
+    # )
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    # print("\n=== 可视化训练集粒球 ===")
+    # # 保存到当前目录下的 granular_balls.png 文件
+    # model.visualize_granular_balls(
+    #     X_train,
+    #     y_train,
+    #     title="Training Set with Granular Balls",
+    #     save_path="../images/granular_balls.png"  # 指定保存路径
+    # )
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = ThreeWayEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1,  # 与模型初始化时相同的alpha
+    #     beta=-0.01  # 与模型初始化时相同的beta
+    # )
+    # ThreeWayEvaluator.print_report(eval_results)
 
     # #2. mushroom数据集
     # print("\n=== 数据集mushroom ===")
@@ -423,3 +424,63 @@ if __name__ == "__main__":
     #     beta=-0.00001  # 与模型初始化时相同的beta
     # )
     # ThreeWayEvaluator.print_report(eval_results)
+
+    # 1. 创建 DataLoader 实例
+    print("=== 数据集fashion-minist ===")
+    loader = DataLoader()
+    result = loader.load_fourclass()
+    train_data = result['data']['train']
+    X_train, y_train = train_data
+    test_data = result['data']['test']
+    X_test, Y_test = test_data
+    # min_radius: float = 0.51参数设置
+
+    # 2. 训练模型
+    print("=== 开始训练 ===")
+    model = GranularThreeWayClassifierV3(
+        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
+        alpha=1,  # 降低接受阈值
+        beta=-0.01,  # 降低拒绝阈值
+    )
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # 训练模型
+    model.fit(X_train, y_train)
+
+    print("\n=== 训练后模型结构 ===")
+    print(model)
+
+    # 查看特征重要性
+    print("\n=== 特征重要性 ===")
+    feature_importance = model.get_feature_importance()
+    print(feature_importance)
+    print("\n=== 可视化训练集粒球 ===")
+    # 保存到当前目录下的 granular_balls.png 文件
+    model.visualize_granular_balls(
+        X_train,
+        y_train,
+        title="Training Set with Granular Balls",
+        save_path="../images/granular_balls.png"  # 指定保存路径
+    )
+
+    # 获取并可视化注意力矩阵
+    print("\n=== 注意力矩阵 ===")
+    attention_matrix = model.visualize_attention()
+    print(attention_matrix)
+
+    # 4. 预测测试集
+    print("\n=== 开始预测 ===")
+    y_pred, similarities = model.predict(X_test)
+
+    # 5. 评估结果
+    print("\n=== 评估结果 ===")
+    eval_results = ThreeWayEvaluator.evaluate(
+        y_true=Y_test,
+        y_pred=y_pred,
+        similarities=similarities,
+        alpha=1,  # 与模型初始化时相同的alpha
+        beta=-0.01  # 与模型初始化时相同的beta
+    )
+    ThreeWayEvaluator.print_report(eval_results)
