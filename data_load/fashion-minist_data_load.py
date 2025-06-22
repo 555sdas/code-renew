@@ -11,7 +11,7 @@ import gzip
 import struct
 
 
-class DataLoader:
+class DataLoaderminist:
     """数据加载与预处理类（支持Fashion-MNIST）"""
 
     def __init__(self, config_path=None, data_root=None, dataset_dir=None,
@@ -152,7 +152,7 @@ class DataLoader:
 
 # 测试代码
 if __name__ == "__main__":
-    loader = DataLoader(data_root="E:/徐兵鑫毕业论文/数据集")
+    loader = DataLoaderminist(data_root="E:/徐兵鑫毕业论文/数据集")
     result = loader.load_fashion_mnist()
 
     # 可视化样本示例
