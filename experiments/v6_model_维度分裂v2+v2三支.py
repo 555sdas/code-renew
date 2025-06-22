@@ -6,7 +6,6 @@ from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
 from data_load.mushroom_data_load import DataLoadermushroom
 from data_load.svmguide1_data_load import DataLoadersvmguide1
-from data_load.
 from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
