@@ -16,7 +16,7 @@ data_loading:
   file_name: "fourclass"              # 无扩展名（代码自动检测）
   file_mushroom_name: "mushroom"
   file_svmguide1_name: "svmguide1"
-  normalize: True
+  normalize: true
   test_size: 0.3
-  random_state: 42
+  random_state: 42     #设置为null为随机种子测出±Sd
   missing_value: "mean"

@@ -6,7 +6,11 @@ from utils.evaluater多任务 import SmartEvaluator
 from data_load.fourclass_data_load import DataLoader
 from data_load.mushroom_data_load import DataLoadermushroom
 from data_load.svmguide1_data_load import DataLoadersvmguide1
+from data_load.pen_data_load import DataLoaderPen
 from data_load.fashionminist_data_load import DataLoaderminist
+from data_load.Skin_NonSkin_data_load import DataLoaderSkin
+from data_load.Ecoli_data_load import DataLoaderEcoli
+from data_load.CodRNA_data_load import DataLoaderCodRNA
 from data_load.pen_data_load import DataLoaderPen
 from sklearn.preprocessing import StandardScaler
 import os
@@ -426,10 +430,274 @@ if __name__ == "__main__":
     # )
     # ThreeWayEvaluator.print_report(eval_results)
 
+    # # 4. 创建 DataLoader 实例
+    # print("=== 数据集fashion-minist ===")
+    # loader = DataLoaderminist()
+    # result = loader.load_fashion_mnist()
+    # train_data = result['data']['train']
+    # X_train, y_train = train_data
+    # test_data = result['data']['test']
+    # X_test, Y_test = test_data
+    # # min_radius: float = 0.51参数设置
+    # # 在训练代码开头添加
+    # print("数据统计验证:")
+    # # 1. 验证原始数据范围（加载后立即检查）
+    # print("原始数据范围:", np.min(X_train), np.max(X_train))  # 应为 [0, 255]
+    # # 可以添加这些检查
+    # print("标准化后数据统计:")
+    # print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
+    # print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
+    #
+    #
+    #
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.80,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1,  # 降低接受阈值
+    #     beta=-0.01,  # 降低拒绝阈值
+    # )
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    # print("\n=== 可视化训练集粒球 ===")
+    # # 保存到当前目录下的 granular_balls.png 文件
+    # model.visualize_granular_balls(
+    #     X_train,
+    #     y_train,
+    #     title="Training Set with Granular Balls",
+    #     save_path="../images/granular_balls.png"  # 指定保存路径
+    # )
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = ThreeWayEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1,  # 与模型初始化时相同的alpha
+    #     beta=-0.01  # 与模型初始化时相同的beta
+    # )
+    # ThreeWayEvaluator.print_report(eval_results)
     # 4. 创建 DataLoader 实例
-    print("=== 数据集fashion-minist ===")
-    loader = DataLoaderminist()
-    result = loader.load_fashion_mnist()
+
+    # print("=== 数据集pen ===")
+    # loader = DataLoaderPen(data_root="E:\徐兵鑫毕业论文\数据集\pen", normalize=True)
+    # result = loader.load_pen()
+    # train_data = result['data']['train']
+    # X_train, y_train = train_data
+    # test_data = result['data']['test']
+    # X_test, Y_test = test_data
+    # # min_radius: float = 0.51参数设置
+    # # 在训练代码开头添加
+    # print("数据统计验证:")
+    # # 1. 验证原始数据范围（加载后立即检查）
+    # print("原始数据范围:", np.min(X_train), np.max(X_train))  # 应为 [0, 255]
+    # # 可以添加这些检查
+    # print("标准化后数据统计:")
+    # print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
+    # print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.9,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1,  # 降低接受阈值
+    #     beta=-0.01,  # 降低拒绝阈值
+    # )
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = SmartEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1,  # 与模型初始化时相同的alpha
+    #     beta=-0.01  # 与模型初始化时相同的beta
+    # )
+    # SmartEvaluator.print_report(eval_results)
+
+    # print("=== 数据集Skin_NonSkin ===")
+    # loader = DataLoaderSkin(
+    #     data_root="E:/徐兵鑫毕业论文/数据集",
+    #     dataset_dir="Skin_NonSkin_data",
+    #     file_name="Skin_NonSkin_data.csv",
+    #     normalize=True
+    # )
+    # result = loader.load_skin()
+    # train_data = result['data']['train']
+    # X_train, y_train = train_data
+    # test_data = result['data']['test']
+    # X_test, Y_test = test_data
+    # # min_radius: float = 0.51参数设置
+    # # 在训练代码开头添加
+    # print("数据统计验证:")
+    # # 1. 验证原始数据范围（加载后立即检查）
+    # print("原始数据范围:", np.min(X_train), np.max(X_train))  # 应为 [0, 255]
+    # # 可以添加这些检查
+    # print("标准化后数据统计:")
+    # print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
+    # print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.9,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1,  # 降低接受阈值
+    #     beta=-0.01,  # 降低拒绝阈值
+    # )
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = SmartEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1,  # 与模型初始化时相同的alpha
+    #     beta=-0.01  # 与模型初始化时相同的beta
+    # )
+    # SmartEvaluator.print_report(eval_results)
+
+    # print("=== 数据集Cod_RNA ===")
+    # loader = DataLoaderCodRNA(
+    #     data_root="E:/徐兵鑫毕业论文/数据集",
+    #     dataset_dir="cod-rna_data",
+    #     file_name="cod-rna_data.csv",
+    #     normalize=True
+    # )
+    # result = loader.load_cod_rna()
+    # train_data = result['data']['train']
+    # X_train, y_train = train_data
+    # test_data = result['data']['test']
+    # X_test, Y_test = test_data
+    # # min_radius: float = 0.51参数设置
+    # # 在训练代码开头添加
+    # print("数据统计验证:")
+    # # 1. 验证原始数据范围（加载后立即检查）
+    # print("原始数据范围:", np.min(X_train), np.max(X_train))  # 应为 [0, 255]
+    # # 可以添加这些检查
+    # print("标准化后数据统计:")
+    # print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
+    # print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
+    #
+    # # 2. 训练模型
+    # print("=== 开始训练 ===")
+    # model = GranularThreeWayClassifierV3(
+    #     min_purity=0.95,  # 降低纯度阈值，允许更多分裂
+    #     alpha=1,  # 降低接受阈值
+    #     beta=-0.01,  # 降低拒绝阈值
+    # )
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
+    # X_test = scaler.transform(X_test)
+    #
+    # # 训练模型
+    # model.fit(X_train, y_train)
+    #
+    # print("\n=== 训练后模型结构 ===")
+    # print(model)
+    #
+    # # 查看特征重要性
+    # print("\n=== 特征重要性 ===")
+    # feature_importance = model.get_feature_importance()
+    # print(feature_importance)
+    #
+    # # 获取并可视化注意力矩阵
+    # print("\n=== 注意力矩阵 ===")
+    # attention_matrix = model.visualize_attention()
+    # print(attention_matrix)
+    #
+    # # 4. 预测测试集
+    # print("\n=== 开始预测 ===")
+    # y_pred, similarities = model.predict(X_test)
+    #
+    # # 5. 评估结果
+    # print("\n=== 评估结果 ===")
+    # eval_results = SmartEvaluator.evaluate(
+    #     y_true=Y_test,
+    #     y_pred=y_pred,
+    #     similarities=similarities,
+    #     alpha=1,  # 与模型初始化时相同的alpha
+    #     beta=-0.01  # 与模型初始化时相同的beta
+    # )
+    # SmartEvaluator.print_report(eval_results)
+
+    print("=== 数据集Ecoli ===")
+    loader = DataLoaderEcoli(
+        config_path=None,
+        data_root="E:/徐兵鑫毕业论文/数据集",
+        dataset_dir="ecoli_data",
+        file_name="ecoli_data.csv",
+        normalize=True
+    )
+    result = loader.loadecoli_data()
     train_data = result['data']['train']
     X_train, y_train = train_data
     test_data = result['data']['test']
@@ -443,9 +711,6 @@ if __name__ == "__main__":
     print("标准化后数据统计:")
     print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
     print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
-
-
-
 
     # 2. 训练模型
     print("=== 开始训练 ===")
@@ -468,14 +733,6 @@ if __name__ == "__main__":
     print("\n=== 特征重要性 ===")
     feature_importance = model.get_feature_importance()
     print(feature_importance)
-    # print("\n=== 可视化训练集粒球 ===")
-    # # 保存到当前目录下的 granular_balls.png 文件
-    # model.visualize_granular_balls(
-    #     X_train,
-    #     y_train,
-    #     title="Training Set with Granular Balls",
-    #     save_path="../images/granular_balls.png"  # 指定保存路径
-    # )
 
     # 获取并可视化注意力矩阵
     print("\n=== 注意力矩阵 ===")

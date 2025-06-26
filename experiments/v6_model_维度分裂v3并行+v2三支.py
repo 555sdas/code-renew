@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Dict, Tuple, List
-from granular_ball.v6_granular_ball_维度分裂v202 import GranularBallClassCentric
+from granular_ball.v6_granular_ball_维度分裂v3并行 import GranularBallClassCentric  # 修改为使用线程池版本
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
-from utils.evaluater多任务 import SmartEvaluator
+from utils.evaluater import ThreeWayEvaluator
 from data_load.fourclass_data_load import DataLoader
 from data_load.mushroom_data_load import DataLoadermushroom
 from data_load.svmguide1_data_load import DataLoadersvmguide1
@@ -12,15 +12,16 @@ from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import time  # 添加时间模块用于进度监控
 
-os.environ['LOKY_MAX_CPU_COUNT'] = '8'  # 设置为您的CPU逻辑核心数
+os.environ['LOKY_MAX_CPU_COUNT'] = '16'  # 设置为您的CPU逻辑核心数
 
 
 class GranularThreeWayClassifierV3:
     """
-    基于维度进行分裂V6
+    基于维度进行分裂V6 (多线程版本)
     工作流程：
-    1. 使用论文方法生成粒球
+    1. 使用线程池并行生成粒球
     2. 对测试样本计算与粒球的相似度
     3. 应用三支决策规则分类
     """
@@ -28,15 +29,22 @@ class GranularThreeWayClassifierV3:
     def __init__(self,
                  min_purity: float = 0.85,
                  alpha: float = 0.7,
-                 beta: float = 0.3):
-        self.gb_model = GranularBallClassCentric(min_purity=min_purity)
+                 beta: float = 0.3,
+                 n_workers: int = 2):  # 添加线程数参数
+        self.gb_model = GranularBallClassCentric(
+            min_purity=min_purity,
+            n_workers=n_workers  # 传递线程数
+        )
         self.tw_model = ThreeWayDecisionV1(alpha=alpha, beta=beta)
         self.ball_stats_ = []
         self.feature_importances_ = None
         self.attention_matrix_ = None
+        self.n_workers = n_workers  # 保存线程数
 
     def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> Dict:
         """训练模型"""
+        print(f"使用 {self.n_workers} 个工作线程进行训练...")
+
         # 训练粒球模型(内部会自动调用后处理)
         self.gb_model.fit(X_train, y_train)
 
@@ -79,7 +87,7 @@ class GranularThreeWayClassifierV3:
         :param X: 样本特征 (n_samples, 2)
         :param y: 样本标签 (n_samples,)
         :param title: 图表标题
-        :param save_path: 如果提供路径，则保存图像到本地（例如：'./granular_balls.png'）
+        :param save_path: 如果提供路径，则保存图像到本地
         """
         plt.figure(figsize=(10, 8))
 
@@ -179,11 +187,11 @@ class GranularThreeWayClassifierV3:
         if self.attention_matrix_ is None:
             return np.eye(1)  # 返回单位矩阵作为占位符
 
-        # if plot and self.attention_matrix_.shape[0] > 1:
-        #     plt.figure(figsize=(8, 6))
-        #     sns.heatmap(self.attention_matrix_, annot=True, cmap='viridis')
-        #     plt.title("Feature Attention Matrix")
-            #plt.show()
+        if plot and self.attention_matrix_.shape[0] > 1:
+            plt.figure(figsize=(8, 6))
+            sns.heatmap(self.attention_matrix_, annot=True, cmap='viridis')
+            plt.title("Feature Attention Matrix")
+            plt.show()
 
         return self.attention_matrix_
 
@@ -217,8 +225,9 @@ class GranularThreeWayClassifierV3:
     def __str__(self):
         """返回模型结构信息"""
         info = [
-            "GranularThreeWayClassifier V3 (论文方法) 模型结构:",
-            f"- 粒球模型: GranularBallV3",
+            f"GranularThreeWayClassifier V3 (多线程版本) 模型结构:",
+            f"- 工作线程数: {self.n_workers}",
+            f"- 粒球模型: GranularBallThreadPool",
             f"  * 最小纯度: {self.gb_model.min_purity}",
             f"  * 粒球数量: {getattr(self.gb_model, 'n_balls', '未训练')}",
         ]
@@ -263,7 +272,6 @@ class GranularThreeWayClassifierV3:
             report['removed_balls'] = len(self.gb_model.generated_balls) - self.gb_model.n_balls
 
         return report
-
 
 if __name__ == "__main__":
     # # 1. 创建 DataLoader 实例
@@ -450,7 +458,7 @@ if __name__ == "__main__":
     # 2. 训练模型
     print("=== 开始训练 ===")
     model = GranularThreeWayClassifierV3(
-        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
+        min_purity=0.80,  # 降低纯度阈值，允许更多分裂
         alpha=1,  # 降低接受阈值
         beta=-0.01,  # 降低拒绝阈值
     )
@@ -468,14 +476,14 @@ if __name__ == "__main__":
     print("\n=== 特征重要性 ===")
     feature_importance = model.get_feature_importance()
     print(feature_importance)
-    # print("\n=== 可视化训练集粒球 ===")
-    # # 保存到当前目录下的 granular_balls.png 文件
-    # model.visualize_granular_balls(
-    #     X_train,
-    #     y_train,
-    #     title="Training Set with Granular Balls",
-    #     save_path="../images/granular_balls.png"  # 指定保存路径
-    # )
+    print("\n=== 可视化训练集粒球 ===")
+    # 保存到当前目录下的 granular_balls.png 文件
+    model.visualize_granular_balls(
+        X_train,
+        y_train,
+        title="Training Set with Granular Balls",
+        save_path="../images/granular_balls.png"  # 指定保存路径
+    )
 
     # 获取并可视化注意力矩阵
     print("\n=== 注意力矩阵 ===")
@@ -488,11 +496,11 @@ if __name__ == "__main__":
 
     # 5. 评估结果
     print("\n=== 评估结果 ===")
-    eval_results = SmartEvaluator.evaluate(
+    eval_results = ThreeWayEvaluator.evaluate(
         y_true=Y_test,
         y_pred=y_pred,
         similarities=similarities,
         alpha=1,  # 与模型初始化时相同的alpha
         beta=-0.01  # 与模型初始化时相同的beta
     )
-    SmartEvaluator.print_report(eval_results)
+    ThreeWayEvaluator.print_report(eval_results)

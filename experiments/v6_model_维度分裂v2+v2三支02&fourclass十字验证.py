@@ -2,10 +2,11 @@ import numpy as np
 from typing import Dict, Tuple, List
 from granular_ball.v6_granular_ball_维度分裂v202 import GranularBallClassCentric
 from three_way_decision.v1_three_way_decision_固定阈值 import ThreeWayDecisionV1
-from utils.evaluater多任务 import SmartEvaluator
+from utils.evaluater多任务十字验证 import SmartEvaluator
 from data_load.fourclass_data_load import DataLoader
 from data_load.mushroom_data_load import DataLoadermushroom
 from data_load.svmguide1_data_load import DataLoadersvmguide1
+from data_load.pen_data_load import DataLoaderPen
 from data_load.fashionminist_data_load import DataLoaderminist
 from data_load.pen_data_load import DataLoaderPen
 from sklearn.preprocessing import StandardScaler
@@ -179,11 +180,11 @@ class GranularThreeWayClassifierV3:
         if self.attention_matrix_ is None:
             return np.eye(1)  # 返回单位矩阵作为占位符
 
-        # if plot and self.attention_matrix_.shape[0] > 1:
-        #     plt.figure(figsize=(8, 6))
-        #     sns.heatmap(self.attention_matrix_, annot=True, cmap='viridis')
-        #     plt.title("Feature Attention Matrix")
-            #plt.show()
+        if plot and self.attention_matrix_.shape[0] > 1:
+            plt.figure(figsize=(8, 6))
+            sns.heatmap(self.attention_matrix_, annot=True, cmap='viridis')
+            plt.title("Feature Attention Matrix")
+            plt.show()
 
         return self.attention_matrix_
 
@@ -266,233 +267,56 @@ class GranularThreeWayClassifierV3:
 
 
 if __name__ == "__main__":
-    # # 1. 创建 DataLoader 实例
-    # print("=== 数据集fourclass ===")
-    # loader = DataLoader()
-    # result = loader.load_fourclass()
-    # train_data = result['data']['train']
-    # X_train, y_train = train_data
-    # test_data = result['data']['test']
-    # X_test, Y_test = test_data
-    # #min_radius: float = 0.51参数设置
-    #
-    # # 2. 训练模型
-    # print("=== 开始训练 ===")
-    # model = GranularThreeWayClassifierV3(
-    #     min_purity=0.95,  # 降低纯度阈值，允许更多分裂
-    #     alpha=1,  # 降低接受阈值
-    #     beta=-0.01,  # 降低拒绝阈值
-    # )
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-    #
-    # # 训练模型
-    # model.fit(X_train, y_train)
-    #
-    # print("\n=== 训练后模型结构 ===")
-    # print(model)
-    #
-    #
-    # # 查看特征重要性
-    # print("\n=== 特征重要性 ===")
-    # feature_importance = model.get_feature_importance()
-    # print(feature_importance)
-    # print("\n=== 可视化训练集粒球 ===")
-    # # 保存到当前目录下的 granular_balls.png 文件
-    # model.visualize_granular_balls(
-    #     X_train,
-    #     y_train,
-    #     title="Training Set with Granular Balls",
-    #     save_path="../images/granular_balls.png"  # 指定保存路径
-    # )
-    #
-    # # 获取并可视化注意力矩阵
-    # print("\n=== 注意力矩阵 ===")
-    # attention_matrix = model.visualize_attention()
-    # print(attention_matrix)
-    #
-    # # 4. 预测测试集
-    # print("\n=== 开始预测 ===")
-    # y_pred, similarities = model.predict(X_test)
-    #
-    # # 5. 评估结果
-    # print("\n=== 评估结果 ===")
-    # eval_results = ThreeWayEvaluator.evaluate(
-    #     y_true=Y_test,
-    #     y_pred=y_pred,
-    #     similarities=similarities,
-    #     alpha=1,  # 与模型初始化时相同的alpha
-    #     beta=-0.01  # 与模型初始化时相同的beta
-    # )
-    # ThreeWayEvaluator.print_report(eval_results)
+    # 1. 加载完整数据集
+    print("=== 数据集fourclass ===")
+    loader = DataLoader()
+    result = loader.load_fourclass()
+    X_full = np.concatenate([result['data']['train'][0], result['data']['test'][0]])
+    y_full = np.concatenate([result['data']['train'][1], result['data']['test'][1]])
 
-    # #2. mushroom数据集
-    # print("\n=== 数据集mushroom ===")
-    # loader = DataLoadermushroom()
-    # result = loader.load_mushroom()
-    # X_train, y_train = result['data']['train']
-    # X_test, Y_test = result['data']['test']
-    #
-    # # 2. 训练模型
-    # print("=== 开始训练 ===")
-    # model = GranularThreeWayClassifierV3(
-    #     min_purity=0.9,  # 降低纯度阈值，允许更多分裂
-    #     alpha=1,  # 降低接受阈值
-    #     beta=0.02,  # 降低拒绝阈值
-    # )
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-    #
-    # # 训练模型
-    # model.fit(X_train, y_train)
-    #
-    # print("\n=== 训练后模型结构 ===")
-    # print(model)
-    #
-    # # 查看特征重要性
-    # print("\n=== 特征重要性 ===")
-    # feature_importance = model.get_feature_importance()
-    # print(feature_importance)
-    #
-    # # 获取并可视化注意力矩阵
-    # print("\n=== 注意力矩阵 ===")
-    # attention_matrix = model.visualize_attention()
-    # print(attention_matrix)
-    #
-    # # 4. 预测测试集
-    # print("\n=== 开始预测 ===")
-    # y_pred, similarities = model.predict(X_test)
-    #
-    # # 5. 评估结果
-    # print("\n=== 评估结果 ===")
-    # eval_results = ThreeWayEvaluator.evaluate(
-    #     y_true=Y_test,
-    #     y_pred=y_pred,
-    #     similarities=similarities,
-    #     alpha=1,  # 与模型初始化时相同的alpha
-    #     beta=0.02  # 与模型初始化时相同的beta
-    # )
-    # ThreeWayEvaluator.print_report(eval_results)
+    # 2. 准备10折交叉验证
+    from sklearn.model_selection import KFold
 
-    # # 3. svmguide1数据集
-    # print("\n=== 数据集svmguide1 ===")
-    # loader = DataLoadersvmguide1()
-    # result = loader.load_svmguide1()
-    # X_train, y_train = result['data']['train']
-    # X_test, Y_test = result['data']['test']
-    #
-    # # 2. 训练模型
-    # print("=== 开始训练 ===")
-    # model = GranularThreeWayClassifierV3(
-    #     min_purity=0.9,  # 降低纯度阈值，允许更多分裂
-    #     alpha=1,  # 降低接受阈值
-    #     beta=-0.00001,  # 降低拒绝阈值
-    # )
-    # #min_radius: float = 0.59
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-    #
-    # # 训练模型
-    # model.fit(X_train, y_train)
-    #
-    # print("\n=== 训练后模型结构 ===")
-    # print(model)
-    #
-    # # 查看特征重要性
-    # print("\n=== 特征重要性 ===")
-    # feature_importance = model.get_feature_importance()
-    # print(feature_importance)
-    #
-    # # 获取并可视化注意力矩阵
-    # print("\n=== 注意力矩阵 ===")
-    # attention_matrix = model.visualize_attention()
-    # print(attention_matrix)
-    #
-    # # 4. 预测测试集
-    # print("\n=== 开始预测 ===")
-    # y_pred, similarities = model.predict(X_test)
-    #
-    # # 5. 评估结果
-    # print("\n=== 评估结果 ===")
-    # eval_results = ThreeWayEvaluator.evaluate(
-    #     y_true=Y_test,
-    #     y_pred=y_pred,
-    #     similarities=similarities,
-    #     alpha=1,  # 与模型初始化时相同的alpha
-    #     beta=-0.00001  # 与模型初始化时相同的beta
-    # )
-    # ThreeWayEvaluator.print_report(eval_results)
+    kf = KFold(n_splits=10, shuffle=True, random_state=42)
+    results_list = []
 
-    # 4. 创建 DataLoader 实例
-    print("=== 数据集fashion-minist ===")
-    loader = DataLoaderminist()
-    result = loader.load_fashion_mnist()
-    train_data = result['data']['train']
-    X_train, y_train = train_data
-    test_data = result['data']['test']
-    X_test, Y_test = test_data
-    # min_radius: float = 0.51参数设置
-    # 在训练代码开头添加
-    print("数据统计验证:")
-    # 1. 验证原始数据范围（加载后立即检查）
-    print("原始数据范围:", np.min(X_train), np.max(X_train))  # 应为 [0, 255]
-    # 可以添加这些检查
-    print("标准化后数据统计:")
-    print("训练集 - min:", X_train.min(), "max:", X_train.max(), "mean:", X_train.mean(), "std:", X_train.std())
-    print("测试集 - min:", X_test.min(), "max:", X_test.max(), "mean:", X_test.mean(), "std:", X_test.std())
+    for fold, (train_index, test_index) in enumerate(kf.split(X_full)):
+        print(f"\n=== 第 {fold + 1}/10 折交叉验证 ===")
 
+        # 划分训练集和测试集
+        X_train, X_test = X_full[train_index], X_full[test_index]
+        y_train, y_test = y_full[train_index], y_full[test_index]
 
+        # 标准化数据
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
 
+        # 2. 训练模型
+        print("=== 开始训练 ===")
+        model = GranularThreeWayClassifierV3(
+            min_purity=0.95,
+            alpha=1,
+            beta=-0.01,
+        )
+        model.fit(X_train, y_train)
 
-    # 2. 训练模型
-    print("=== 开始训练 ===")
-    model = GranularThreeWayClassifierV3(
-        min_purity=0.95,  # 降低纯度阈值，允许更多分裂
-        alpha=1,  # 降低接受阈值
-        beta=-0.01,  # 降低拒绝阈值
-    )
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+        # 4. 预测测试集
+        print("\n=== 开始预测 ===")
+        y_pred, similarities = model.predict(X_test)
 
-    # 训练模型
-    model.fit(X_train, y_train)
+        # 5. 评估结果
+        print("\n=== 评估结果 ===")
+        eval_results = SmartEvaluator.evaluate(
+            y_true=y_test,
+            y_pred=y_pred,
+            similarities=similarities,
+            alpha=1,
+            beta=-0.01
+        )
+        results_list.append(eval_results)
+        SmartEvaluator.print_report(eval_results)
 
-    print("\n=== 训练后模型结构 ===")
-    print(model)
-
-    # 查看特征重要性
-    print("\n=== 特征重要性 ===")
-    feature_importance = model.get_feature_importance()
-    print(feature_importance)
-    # print("\n=== 可视化训练集粒球 ===")
-    # # 保存到当前目录下的 granular_balls.png 文件
-    # model.visualize_granular_balls(
-    #     X_train,
-    #     y_train,
-    #     title="Training Set with Granular Balls",
-    #     save_path="../images/granular_balls.png"  # 指定保存路径
-    # )
-
-    # 获取并可视化注意力矩阵
-    print("\n=== 注意力矩阵 ===")
-    attention_matrix = model.visualize_attention()
-    print(attention_matrix)
-
-    # 4. 预测测试集
-    print("\n=== 开始预测 ===")
-    y_pred, similarities = model.predict(X_test)
-
-    # 5. 评估结果
-    print("\n=== 评估结果 ===")
-    eval_results = SmartEvaluator.evaluate(
-        y_true=Y_test,
-        y_pred=y_pred,
-        similarities=similarities,
-        alpha=1,  # 与模型初始化时相同的alpha
-        beta=-0.01  # 与模型初始化时相同的beta
-    )
-    SmartEvaluator.print_report(eval_results)
+    # 聚合并打印多次实验结果
+    aggregated_results = SmartEvaluator.aggregate_results(results_list)
+    SmartEvaluator.print_aggregated_report(aggregated_results)

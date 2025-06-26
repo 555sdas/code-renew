@@ -19,8 +19,8 @@ class GranularBallClassCentric:
     def __init__(self,
                  min_purity: float = 0.85,
                  max_iter: int = 100,
-                 min_radius: float = 0.0001,
-                 max_contain_process_cycles: int = 1):  # 新增参数
+                 min_radius: float = 1.2,
+                 max_contain_process_cycles: int =4):  # 新增参数
         self.min_purity = min_purity
         self.max_iter = max_iter
         self.min_radius = min_radius  # 最小半径限制
@@ -37,7 +37,7 @@ class GranularBallClassCentric:
 
     def _calculate_center_and_radius(self, X: np.ndarray) -> Tuple[np.ndarray, float]:
         """计算类别中心点和半径（确保最小半径）"""
-        center = np.median(X, axis=0)  # 中位数作为中心点
+        center = np.median(X, axis=0)  # 改为平均值（原为 np.median中位数）
         distances = np.linalg.norm(X - center, axis=1)
         radius = np.percentile(distances, 100)  # 80%百分位数
         return center, max(radius, self.min_radius)  # 确保不小于最小半径
@@ -47,7 +47,7 @@ class GranularBallClassCentric:
         n_features = X.shape[1]
 
         # 如果特征数较少，直接使用所有特征
-        if n_features <= 4:
+        if n_features <= 2:
             return np.arange(n_features)
 
         # 计算特征重要性分数（基于方差和互信息）
@@ -78,10 +78,10 @@ class GranularBallClassCentric:
 
         # 如果所有特征得分都是零，返回前4个特征
         if np.all(feature_scores == 0):
-            return np.arange(min(4, n_features))
+            return np.arange(min(16, n_features))
 
         # 选择得分最高的2-4个特征
-        n_select = min(max(2, int(n_features * 0.2)), 4)
+        n_select = min(max(2, int(n_features)), 16)
         top_features = np.argsort(feature_scores)[-n_select:]
 
         print(f"选择了 {len(top_features)} 个重要特征: {top_features}")
@@ -143,18 +143,25 @@ class GranularBallClassCentric:
 
     def _build_class_granular_ball(self, X: np.ndarray, y: np.ndarray,
                                    class_label: int, indices: np.ndarray, level: int = 0):
-        """递归构建针对特定类别的粒球（使用注意力机制优化）"""
-        # 计算当前粒球的中心点和半径
         center, radius = self._calculate_center_and_radius(X)
 
-        # 在整个数据集上计算纯度（考虑了其他类别的样本）
-        purity = self._get_global_purity(center, radius, class_label)
+        # 计算粒球覆盖的所有样本
+        ball_indices = np.where(np.linalg.norm(self.X_full - center, axis=1) <= radius)[0]
 
-        # 打印调试信息
-        class_only_purity = len(y) / (len(y) + len(self.y_full) - len(np.unique(self.y_full)))
-        print(
-            f"类别 {class_label} 粒球: 级别={level}, 类别样本数={len(X)}, 球体总样本={len(np.where(np.linalg.norm(self.X_full - center, axis=1) <= radius)[0])}, 纯度={purity:.3f} (仅类内纯度={class_only_purity:.3f})")
+        # 计算各类纯度
+        global_purity = len(X) / len(ball_indices)  # 当前类别样本在粒球中的比例
+        purity = np.sum(self.y_full[ball_indices] == class_label) / len(ball_indices)
+        class_coverage = len(X) / np.sum(self.y_full == class_label)
 
+        # 调试信息
+        print(f"           --- 级别 {level} --- | "
+              f"中心点坐标范围: [{np.min(center):.2f}, {np.max(center):.2f}] | "
+              f"半径: {radius:.2f} | "
+              f"当前类别样本: {len(X)} | "
+              f"粒球覆盖总样本: {len(ball_indices)} | "
+              f"在当前分裂使用的纯度: {global_purity:.3f} | "
+              f"真实纯度: {purity:.3f} | "
+              f"类内覆盖率: {class_coverage:.3f}")
         # 停止条件判断
         stop_condition = (
                 purity >= self.min_purity or  # 纯度满足要求
